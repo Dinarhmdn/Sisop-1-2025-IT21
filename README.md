@@ -75,6 +75,9 @@ Pengguna dapat memilih opsi berulang kali tanpa harus menjalankan kembali skrip.
 Menggunakan ```select``` untuk menampilkan pilihan sebagai daftar yang lebih interaktif.
 
 Menghindari input manual yang rentan kesalahan dengan format yang lebih terstruktur.
+contoh output :
+![WhatsApp Image 2025-03-20 at 19 49 43_9e26709b](https://github.com/user-attachments/assets/cd3b83a2-d390-4031-b0e9-3428f5c4c6d4)
+
 
 
 
@@ -153,7 +156,7 @@ user_email="$1"
 user_username="$2"
 user_password="$3"
 ```
-memastikan argumen yang diinput menyesuaikan parameter, yaitu <email> <username> <password>
+memastikan argumen yang diinput menyesuaikan parameter, yaitu email username password
 
 ```sh
 # validasi email
@@ -213,7 +216,7 @@ fi
 email="$1"
 password="$2"
 ```
-membuat parameter untuk login, yaitu <email> <password>
+membuat parameter untuk login, yaitu email password
 
 ```sh
 # hash password
@@ -454,9 +457,11 @@ menampilkan main menu dan meminta input user
     done
 }
 ```
-pada pilihan 1, user akan registrasi dan diminta untuk mengisi <email> <username> dan <password>, lalu memanggil script ``register.sh`` untuk mengeksekusi input nya
-pada pilihan 2, user akan login dan diminta untuk mengisi <email> dan <password>, lalu memanggil script ``login.sh`` untuk mengeksekusi input nya
-pada pilihan 3, user akan keluar dari ``terminal.sh``
+-pada pilihan 1, user akan registrasi dan diminta untuk mengisi email username dan password, lalu memanggil script ``register.sh`` untuk mengeksekusi input nya.
+-pada pilihan 2, user akan login dan diminta untuk mengisi email dan password, lalu memanggil script ``login.sh`` untuk mengeksekusi input nya.
+-pada pilihan 3, user akan keluar dari ``terminal.sh``.
+output ``terminal.sh``
+![Screenshot 2025-03-20 213126](https://github.com/user-attachments/assets/b4090e42-b4fd-4553-af03-a7032d1ae907)
 
 
 ```sh
@@ -492,3 +497,186 @@ show_user_dashboard() {
 }
 ```
 saat user telah berhasil login, user akan dialihkan ke menu ini, dimana user bisa mengakses ``crontab manager`` yang telah dibuat pada sebelumnya.
+jika telah berhasil login, maka user dapat mengakses crontab manager :
+![Screenshot 2025-03-20 213152](https://github.com/user-attachments/assets/5a0d09e3-78df-4881-87e5-f82cde9a421b)
+
+
+# Soal 4
+Pada suatu hari, anda diminta teman anda untuk membantunya mempersiapkan diri untuk turnamen Pokemon “Generation 9 OverUsed 6v6 Singles” dengan cara membuatkan tim yang cocok untuknya. Tetapi, anda tidak memahami meta yang dimainkan di turnamen tersebut. Untungnya, seorang informan memberikan anda data pokemon_usage.csv yang bisa anda download dan analisis. 
+[Author: Amoes / winter]
+# Analisis soal 
+soal ini meminta kita untuk menganalisis data dari file ``pokemon_usage.csv``. Analisis dilakukan menggunakan script ``pokemon_analysis.sh`` dengan beberapa fitur utama yang harus dibuat sebagai berikut :
+1. help screen
+2. menampilkan summary data pokemon (info)
+3. mengurutkan pokemon berdasarkan kolom tertentu (sort)
+4. mencari pokemon berdasarkan nama (grep)
+5. mencari pokemon berdasarkan tipe (filter)
+6. error handling
+
+# 1. membuaat help screen yang menarik
+```sh
+show_help() {
+    cat << "EOF"
+    ⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣤⣶⣶⣿⣿⣿⣿⣿⣶⣶⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀
+    ⠀⠀⠀⠀⠀⠀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⠀⠀⠀⠀⠀
+    ⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀
+    ⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠙⣿⣿⣿⣿⣿⣆⠀⠀
+    ⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⢿⣧⡀⠀⢠⣿⠟⠛⠛⠿⣿⡆⠀
+    ⠀⢰⣿⣿⣿⣿⣿⣿⠿⠟⠋⠉⠁⠀⠀⠀⠀⠀⠙⠿⠿⠟⠋⠀⠀⠀⣠⣿⠇⠀
+    ⠀⢸⣿⣿⡿⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣾⠟⠋⠀⠀
+    ⠀⢸⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣴⣾⠿⠛⠉⠀⠀⠀⠀⠀
+    ⠀⠈⢿⣷⣤⣤⣄⣠⣤⣤⣤⣤⣶⣶⣾⠿⠿⠛⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    ⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣦⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀
+    ⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣄⠀⠀⠀⠀
+    ⠀⢸⣿⡛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠀
+    ⠀⠀⢻⣧⠀⠈⠙⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀
+    ⠀⠀⠈⢿⣧⠀⠀⠀⠀⠀⠀⠉⠙⠛⠻⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁⠀
+    ⠀⠀⠀⠀⠻⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⣿⠟⠀⣠⣾⠟⠀⠀⠀
+    ⠀⠀⠀⠀⠀⠈⠻⣷⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⢀⣤⣾⠟⠁⠀⠀⠀⠀
+    ⠀⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⣶⣦⣤⣤⣤⣤⣤⣤⣶⡿⠟⠋⠁⠀⠀⠀⠀⠀⠀
+    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                            
+EOF
+    echo "---------------------------------------------------------"
+    echo "Usage: $0 <file.csv> <command> [options]"
+    echo "---------------------------------------------------------"
+    echo "Commands:"
+    echo "  -h, --help              : Show this help screen"
+    echo "  -i, --info              : Display data summary"
+    echo "  -s, --sort <col>        : Sort by the following columns:"
+    echo "      name                : Name (Alphabetical Order)"
+    echo "      usage               : Adjusted Usage (Descending)"
+    echo "      raw                 : Raw Usage (Descending)"
+    echo "      hp, atk, def        : Pokemon Stats (Descending)"
+    echo "      spatk, spdef, speed : Other stats (Descending)"
+    echo "  -g, --grep <name>       : Search Pokemon by name"
+    echo "  -f, --filter <type>     : Filter Pokemon by type"
+    echo "---------------------------------------------------------"
+    echo "Example Usage:"
+    echo "  ./pokemon_analysis.sh pokemon_usage.csv --sort usage"
+    echo "  ./pokemon_analysis.sh pokemon_usage.csv --grep Pikachu"
+    echo "  ./pokemon_analysis.sh pokemon_usage.csv --filter Fire"
+    echo "---------------------------------------------------------"
+    exit 0
+}
+```
+fungsi untuk menampilkan help screen yang bisa membantu user untuk menggunakan sistem pokemon anaysis ini
+
+```sh
+# memanggil help screen
+test "$1" == "-h" || test "$1" == "--help" && show_help
+```
+jika user menginput command ``-h`` atau ``--help`` maka akan memanggil help screen di atas. seperti berikut :
+![Screenshot 2025-03-20 213820](https://github.com/user-attachments/assets/9ba57e6a-d559-4282-b484-0ff42bba5f26)
+
+```sh
+# argumen input
+if [[ $# -lt 2 ]]; then
+    echo "Error: Missing arguments! Use --help for command list."
+    exit 1
+fi
+
+CSV_FILE="$1"
+COMMAND="$2"
+
+if [[ ! -f "$CSV_FILE" ]]; then
+    echo "Error: File $CSV_FILE not found!"
+    exit 1
+fi
+```
+untuk membuat parameter input untuk menjalankan sistem analysis pokemon, jika file csv tidak ditemukan, mengeluarkan error
+
+```sh
+case "$COMMAND" in
+    --info)
+        echo "Displaying data summary..."
+        
+        # cari Usage% tertinggi pokemon
+        top_usage=$(awk -F',' 'NR>1 {if($2>max) {max=$2; name=$1}} END {print name "," max}' "$CSV_FILE")
+        
+        # cari RawUsage tertinggi pokemon
+        top_raw=$(awk -F',' 'NR>1 {if($3>max) {max=$3; name=$1}} END {print name "," max}' "$CSV_FILE")
+        
+        echo "Summary of $CSV_FILE"
+        echo "Top Adjusted Usage: $(echo $top_usage | cut -d',' -f1) with $(echo $top_usage | cut -d',' -f2)%"
+        echo "Top Raw Usage: $(echo $top_raw | cut -d',' -f1) with $(echo $top_raw | cut -d',' -f2) uses"
+        ;;
+```
+membuat fungsi ``--info`` untuk menampilkan usage% tertinggi dan RawUsage tertinggi pokemon, seperti berikut :
+![image](https://github.com/user-attachments/assets/a726cf42-bad7-4a6f-a367-0aae8df2d7bc)
+
+```sh
+    --sort)
+        [[ -z "$3" ]] && { echo "Error: No sorting column provided"; exit 1; }
+
+        SORT_COL="$3"
+        case "$SORT_COL" in
+            usage) COL_NUM=2 ;;  
+            raw) COL_NUM=3 ;;    
+            hp) COL_NUM=4 ;;     
+            atk) COL_NUM=5 ;;    
+            def) COL_NUM=6 ;;    
+            spatk) COL_NUM=7 ;;  
+            spdef) COL_NUM=8 ;;  
+            speed) COL_NUM=9 ;;  
+            name) COL_NUM=1 ;;   
+            *) 
+                echo "Error: Invalid column! Choose from: usage, raw, name, hp, atk, def, spatk, spdef, speed"
+                exit 1
+                ;;
+        esac
+
+        echo "Sorting by $SORT_COL..."
+
+        if [[ "$SORT_COL" == "name" ]]; then
+            awk 'NR==1; NR>1 {print $0 | "sort -t, -k1,1"}' "$CSV_FILE"
+        else
+            awk 'NR==1; NR>1 {print $0 | "sort -t, -k'"$COL_NUM"','"$COL_NUM"'nr"}' "$CSV_FILE"
+        fi
+        ;;
+```
+membuat fungsi ``--sort`` untuk mengurutkan pokemon berdasarkan kolom, contoh :
+![image](https://github.com/user-attachments/assets/26f0d3ab-8af6-47d9-af05-c698dca3194c)
+
+```sh
+    --grep)
+        [[ -z "$3" ]] && { echo "Error: No search term provided"; exit 1; }
+
+        SEARCH_NAME="$3"
+        echo "Searching for Pokemon named: $SEARCH_NAME..."
+
+        # cari nama pokemon 
+        result=$(awk -F',' 'BEGIN {IGNORECASE=1} $1 ~ /'"$SEARCH_NAME"'/ {print}' "$CSV_FILE")
+
+        [[ -n "$result" ]] && echo "$result" || echo "Pokemon \"$SEARCH_NAME\" not found."
+        ;;
+```
+membuat fungsi grep untuk mencari pokemon berdasarkan nama, contoh :
+![image](https://github.com/user-attachments/assets/c11d96a8-dd02-4081-942c-4a47eda0e8c4)
+
+```sh
+--filter)
+        [[ -z "$3" ]] && { echo "Error: No filter option provided"; exit 1; }
+
+        POKEMON_TYPE="$3"
+        echo "Filtering Pokemon with type: $POKEMON_TYPE..."
+
+        # cari tipe pokemon
+        result=$(awk -F',' 'BEGIN {IGNORECASE=1} $4 ~ /'"$POKEMON_TYPE"'/ || $5 ~ /'"$POKEMON_TYPE"'/ {print}' "$CSV_FILE")
+
+        [[ -n "$result" ]] && echo "$result" || echo "No Pokemon found with type \"$POKEMON_TYPE\"."
+        ;;
+
+    *)
+        echo "Error: Unknown command! Use --help for command list."
+        exit 1
+        ;;
+esac
+```
+membuat fungsi ``--filter`` untuk mencari pokemon berdasarkan type, contoh :
+![image](https://github.com/user-attachments/assets/e1e87f41-b235-4209-b798-9cb595a8e4c8)
+
+
+
+
+
+
