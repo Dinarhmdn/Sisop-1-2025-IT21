@@ -79,3 +79,106 @@ Menghindari input manual yang rentan kesalahan dengan format yang lebih terstruk
 
 
 # Soal_2
+Anda merupakan seorang “Observer”, dari banyak dunia yang dibuat dari ingatan yang berbentuk “fragments” - yang berisi kemungkinan yang dapat terjadi di dunia lain. Namun, akhir-akhir ini terdapat anomali-anomali yang seharusnya tidak terjadi, perpindahan “fragments” di berbagai dunia, yang kemungkinan terjadi dikarenakan seorang “Seeker” yang berubah menjadi “Ascendant”, atau dalam kata lain, “God”. Tidak semua “Observer” menjadi “Player”, tetapi disini anda ditugaskan untuk ikut serta dalam menjaga equilibrium dari dunia-dunia yang terbuat dari “Arcaea”. 
+[Author: Nathan / etern1ty]
+
+# Analisis soal
+Soal ini meminta kita untuk membuat sistem dengan ketentuan berikut :
+
+1. Autentikasi pengguna (register/login) dengan validasi input dan hashing password.
+2. Pemantauan sumber daya sistem (CPU dan RAM).
+3. Pembuatan sistem logging dan otomatisasi dengan cron job.
+4. Antarmuka shell script yang mengintegrasikan semua fitur di dalamnya.
+
+# 1. Persiapan
+```sh
+touch register.sh && touch login.sh && mkdir data
+```
+membuat file ``register.sh`` dan ``login.sh`` dan memberi izin execute
+
+# 2. script ``register.sh``
+```sh
+USER_DB="data/player.csv"
+SALT_KEY="garem"
+```
+menentukan lokasi database dan membuat salt key dengan string bebas untuk hashing, disini kita menggunakan string "garem"
+
+```sh
+if [[ ! -f "$USER_DB" ]]; then
+    echo -e "${YELLOW}User database not found. Creating database...${NC}"
+    mkdir -p "$(dirname "$USER_DB")" && touch "$USER_DB"
+    echo "email,username,password_hash" > "$USER_DB"
+    echo -e "${GREEN}Database created successfully.${NC}"
+fi
+```
+membuat database jika database setelah user melakukan regist. Database akan dibuat otomatis setelah register jika sebelumnya database tidak ditemukan
+
+```sh
+validate_email() {
+    local email="$1"
+    if [[ "$email" == *"@"* && "$email" == *"."* ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+```
+fungsi untuk memvalidasi email, memastikan bahwa format email yang diinput adalah mengandung karakter "@" dan "."
+
+```sh
+validate_password() {
+    local password="$1"
+    if [[ ${#password} -lt 8 || ! "$password" =~ [A-Z] || ! "$password" =~ [a-z] || ! "$password" =~ [0-9] ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+```
+fungsi untuk memvalidasi password, memastikan bahwa format password yang diinput ada : setidaknya 1 huruf kapital, 8 karakter panjangnya, dan ada setidaknya 1 angka
+
+```sh
+# cek argumen register
+if [[ $# -ne 3 ]]; then
+    echo -e "${YELLOW}Usage: register.sh <email> <username> <password>${NC}"
+    exit 1
+fi
+
+user_email="$1"
+user_username="$2"
+user_password="$3"
+```
+memastikan argumen yang diinput menyesuaikan parameter, yaitu <email> <username> <password>
+
+```sh
+# validasi email
+if ! validate_email "$user_email"; then
+    echo -e "${RED}Error: Invalid email format!${NC}"
+    exit 1
+fi
+
+# validasi password
+if ! validate_password "$user_password"; then
+    echo -e "${RED}Error: Password must be at least 8 characters long, contain uppercase, lowercase, and a number!${NC}"
+    exit 1
+fi
+
+# cek apakah email sudah terdaftar
+if grep -q "^$user_email," "$USER_DB"; then
+    echo -e "${RED}Error: Email is already registered!${NC}"
+    exit 1
+fi
+```
+mengeluarkan error apabila email dan password tidak sesuai syarat dan juga mengeluarkan error jika email sudah terdaftar
+
+```sh
+# Hashing password
+hashed_password=$(echo -n "$SALT_KEY$user_password" | sha256sum | awk '{print $1}')
+
+# simpan data ke database
+echo "$user_email,$user_username,$hashed_password" >> "$USER_DB"
+echo -e "${GREEN}Registration successful! Welcome, $user_username 🎉${NC}"
+```
+hashing password dengan algoritma ``sha256sum`` dan masukan email, username, dan password yang telah dihash ke database
+
+# 3. script ``login.sh``
