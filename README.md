@@ -90,6 +90,7 @@ Soal ini meminta kita untuk membuat sistem dengan ketentuan berikut :
 3. Pembuatan sistem logging dan otomatisasi dengan cron job.
 4. Antarmuka shell script yang mengintegrasikan semua fitur di dalamnya.
 
+# Tahap Pertama, Membuat Kerangka
 # 1. Persiapan
 ```sh
 touch register.sh && touch login.sh && mkdir data
@@ -103,6 +104,7 @@ SALT_KEY="garem"
 ```
 menentukan lokasi database dan membuat salt key dengan string bebas untuk hashing, disini kita menggunakan string "garem"
 
+
 ```sh
 if [[ ! -f "$USER_DB" ]]; then
     echo -e "${YELLOW}User database not found. Creating database...${NC}"
@@ -112,6 +114,7 @@ if [[ ! -f "$USER_DB" ]]; then
 fi
 ```
 membuat database jika database setelah user melakukan regist. Database akan dibuat otomatis setelah register jika sebelumnya database tidak ditemukan
+
 
 ```sh
 validate_email() {
@@ -125,6 +128,7 @@ validate_email() {
 ```
 fungsi untuk memvalidasi email, memastikan bahwa format email yang diinput adalah mengandung karakter "@" dan "."
 
+
 ```sh
 validate_password() {
     local password="$1"
@@ -136,6 +140,7 @@ validate_password() {
 }
 ```
 fungsi untuk memvalidasi password, memastikan bahwa format password yang diinput ada : setidaknya 1 huruf kapital, 8 karakter panjangnya, dan ada setidaknya 1 angka
+
 
 ```sh
 # cek argumen register
@@ -171,6 +176,7 @@ fi
 ```
 mengeluarkan error apabila email dan password tidak sesuai syarat dan juga mengeluarkan error jika email sudah terdaftar
 
+
 ```sh
 # Hashing password
 hashed_password=$(echo -n "$SALT_KEY$user_password" | sha256sum | awk '{print $1}')
@@ -181,4 +187,94 @@ echo -e "${GREEN}Registration successful! Welcome, $user_username 🎉${NC}"
 ```
 hashing password dengan algoritma ``sha256sum`` dan masukan email, username, dan password yang telah dihash ke database
 
+
 # 3. script ``login.sh``
+```sh
+DB_FILE="data/player.csv"
+SALT="garem"
+```
+menentukan lokasi database yang telah dibuat dan salt key yang sama dengan register
+
+```sh
+if [[ ! -f "$DB_FILE" ]]; then
+    echo -e "${RED}Error: Database not found!${NC}"
+    exit 1
+fi
+```
+mengeluarkan error jika database tidak ditemukan, akan terjadi jika belum pernah register sebelumnya
+
+```sh
+# parameter login
+if [[ $# -ne 2 ]]; then
+    echo -e "${YELLOW}Usage: login.sh <email> <password>${NC}"
+    exit 1
+fi
+
+email="$1"
+password="$2"
+```
+membuat parameter untuk login, yaitu <email> <password>
+
+```sh
+# hash password
+hashed_input=$(echo -n "$SALT$password" | sha256sum | awk '{print $1}')
+```
+hash password yang telah diinput dengan salt key dan hash algoritma ``sha256sum`` yang nantinya akan dibandingkan di database
+
+```sh
+# cari email di database
+if grep -q "^$email," "$DB_FILE"; then
+    stored_hash=$(grep "^$email," "$DB_FILE" | cut -d',' -f3)
+
+    if [[ "$hashed_input" == "$stored_hash" ]]; then
+        username=$(grep "^$email," "$DB_FILE" | cut -d',' -f2)
+        echo -e "${GREEN}Login Successfully! Welcome, $username 🎉${NC}"
+        exit 0
+    else
+        echo -e "${RED}Error: Wrong password!${NC}"
+        exit 1
+    fi
+else
+    echo -e "${RED}Error: Email not registered!${NC}"
+    exit 1
+fi
+```
+mencari email di database dan jika ketemu, password yang diinput akan dibandingkan dengan password yang ada di register
+
+# Tahap Kedua, Lanjutan
+# 4. membuat file ``core_monitor.sh`` , ``frag_monitor.sh`` pada direktori ``scripts/``
+``core_monitor.sh`` digunakan untuk melacak penggunaan CPU (dalam persentase).
+``frag_monitor.sh`` digunakan untuk memantau persentase usage, dan juga penggunaan RAM sekarang. 
+
+- Script ``core_monitor.sh``
+```sh
+LOG_FILE="../logs/core.log"
+```
+menentukan lokasi file ``core.log`` yang dimana digunakan untuk menaruh output dari script ``core_monitor.sh
+
+```sh
+while true; do
+    # jumlah core CPU yang aktif
+    num_cores=$(nproc)
+
+    # persentase CPU usage
+    cpu_usage=$(top -bn1 | awk '/Cpu\(s\):/ {print $2 + $4}')
+
+    # model CPU
+    cpu_model=$(lscpu | grep "Model name" | sed -E 's/Model name:\s+//')
+
+    timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+
+    # simpan hasil monitoring
+    echo "[$timestamp] -- Core Usage [${cpu_usage}%] -- Terminal Model [$cpu_model]" >> "$LOG_FILE"
+
+    # tampilkan hasil ke terminal
+    echo "[$timestamp] -- Core Usage: ${cpu_usage}%, CPU Model: $cpu_model"
+
+    sleep 5
+done
+```
+script ini akan melakukan infinite loop hingga user meng-cancel eksekusi dari script ini, dan script ini akan mengeluarkan output tentang CPU Usage selama 5 detik sekali, dengan format ``[YYYY-MM-DD HH:MM:SS] - Core Usage [$CPU%] - Terminal Model [$CPU_Model]``
+
+- Script ``frag_monitor.sh``
+  
