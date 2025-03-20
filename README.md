@@ -1,4 +1,6 @@
-# Laporan Praktikum IT21
+# Laporan Praktikum Sisop Modul 1 Kelompok IT21
+# Anggota
+1. 
 Soal_1
 1.  Mengunduh Dataset
 ```sh
