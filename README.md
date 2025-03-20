@@ -500,6 +500,128 @@ saat user telah berhasil login, user akan dialihkan ke menu ini, dimana user bis
 jika telah berhasil login, maka user dapat mengakses crontab manager :
 ![Screenshot 2025-03-20 213152](https://github.com/user-attachments/assets/5a0d09e3-78df-4881-87e5-f82cde9a421b)
 
+# Soal 3
+Untuk merayakan ulang tahun ke 52 album The Dark Side of the Moon, tim PR Pink Floyd mengadakan sebuah lomba dimana peserta diminta untuk membuat sebuah script bertemakan setidaknya 5 dari 10 lagu dalam album tersebut. Sebagai salah satu peserta, kamu memutuskan untuk memilih Speak to Me, On the Run, Time, Money, dan Brain Damage. Saat program ini dijalankan, terminal harus dibersihkan terlebih dahulu agar tidak mengganggu tampilan dari fungsi-fungsi yang kamu buat.
+Program ini dijalankan dengan cara ./dsotm.sh --play=”<Track>” dengan Track sebagai nama nama lagu yang kamu pilih. [Author: Afnaan / honque]
+
+# Analisis Soal
+Sesuai perintah dari kebutuhan soal, skrip untuk soal ini menggunakan beberapa perintah sistem seperti curl, jq, figlet, toilet, dan ps untuk menampilkan informasi dan efek visual yang menarik di terminal.
+## Pembersihan Layar Awal
+Pada soal dijelaskan untuk membersihkan layar terminal terlebih dahulu, perintah ini dijalankan dengan :
+```sh
+clear
+```
+Dengan begini terminal telah dibersihkan dan memberikan tampilan yang rapi. Seperti tampilan di bawah ini :
+![image](https://github.com/user-attachments/assets/6b3d0fa3-ea21-4772-8c91-26d1e519000d)
+
+## Speak to Me
+Pada soal ini, ini diminta untuk menampilkan afirmasi positif dari API eksternal (https://www.affirmations.dev) setiap detik. Maka di sini kami menggunakan curl dan memprosesnya dengan jq untuk menmapilkan API tersebut.
+```sh
+on_the_run() {
+    local width=$(tput cols)
+    local bar_width=$((width - 10))
+    local progress=0
+    echo -e "LET'S GAUURRRR RUNNNN!!!"
+    while [ $progress -lt 100 ]; do
+        sleep $(awk -v min=0.1 -v max=1 'BEGIN{srand(); print min+rand()*(max-min)}')
+        ((progress+=1))
+        filled=$((progress * bar_width / 100))
+        printf "\r[%-${bar_width}s] %3d%%" "$(head -c $filled < /dev/zero | tr '\0' '#')" "$progress"
+    done
+    echo ""
+}
+```
+Dengan ini afirmasi positif dari API eksternal dapat ditampilkan setiap detiknya sesuai pada output di bawah ini :
+![image](https://github.com/user-attachments/assets/fd706978-e466-4bfe-9fad-835892ce0c9a)
+## On the Run
+Pada soal ini kita diminta untuk menampilkan progress bar dengan peningkatan acak hingga mencapai 100%.
+```sh
+on_the_run() {
+    local width=$(tput cols)
+    local bar_width=$((width - 10))
+    local progress=0
+    echo -e "LET'S GAUURRRR RUNNNN!!!"
+    while [ $progress -lt 100 ]; do
+        sleep $(awk -v min=0.1 -v max=1 'BEGIN{srand(); print min+rand()*(max-min)}')
+        ((progress+=1))
+        filled=$((progress * bar_width / 100))
+        printf "\r[%-${bar_width}s] %3d%%" "$(head -c $filled < /dev/zero | tr '\0' '#')" "$progress"
+    done
+    echo ""
+}
+```
+Menggunakan kode di atas, progress bar dapat ditampilkan tiap detik seperti pada gambar di bawah ini :
+![image](https://github.com/user-attachments/assets/d7ac4179-36f0-427c-a769-6d0f9d6f8dbf)
+## Time
+Soal ini diperintahkan untuk menampilkan waktu secara real-time yang berubah pada setiap detiknya.
+```sh
+time_display() {
+    while true; do
+        clear
+        date "+%Y-%m-%d %H:%M:%S"
+        sleep 1
+    done
+}
+```
+Dengan perintah menambahkan tanggal dan waktu secara detail seperti di atas, didapatkan output seperti ini :
+![image](https://github.com/user-attachments/assets/b1408a7f-89d1-4b97-a8ad-754199a7b468)
+## MOney
+Pada soal ini, kita perlu menampilkan hujan uang.
+```sh
+money_display() {
+    symbols=("$" "€" "£" "¥" "¢" "₹" "₩" "₿" "₣")
+    cols=$(tput cols)
+    lines=$(tput lines)
+    while true; do
+        clear
+        for ((i=0; i<lines; i++)); do
+            for ((j=0; j<cols; j++)); do
+                if (( RANDOM % 5 == 0 )); then
+                    printf "\033[32m%s" "${symbols[RANDOM % ${#symbols[@]}]}"
+                else
+                    printf " "
+                fi
+            done
+            echo ""
+        done
+        sleep 0.1
+    done
+}
+```
+Dengan perintah yang me-looping simbol mata uang pada tiap cols dan line, maka simbol mata uang akan muncul secara acak pada terminal yang akan menciptakan efek hujan uang. Output :
+![image](https://github.com/user-attachments/assets/5a40eecd-a0a2-4d8d-bee5-674f1ff7118f)
+## Brain Damage
+Soal ini menampilkan task manager yang sedang aktif bekerja secara sederhana dan menampilkan daftar proses dengan penggunaan CPU tertinggi.
+```sh
+brain_damage() {
+    while true; do
+        clear
+        width=$(tput cols)
+        echo -e "\033[1;36m==============================================\033[0m"
+        echo -e "\033[1;36mB R A I N    D A M A G E\033[0m"
+        echo -e "\033[1;36m==============================================\033[0m"
+        echo -e "\033[1;36mUSER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\033[0m"
+        ps aux --sort=-%cpu | awk 'NR==1 || NR<=11' | while read line; do
+            echo -e "\033[1;33m$line\033[0m"
+        done
+        sleep 1
+    done
+}
+```
+Menggunakan ps aux tersebut kita dapat mengetahui apa yang sedang terproses dalam task manager kita dan menampilkannya di terminal dengan pembaruan tiap detiknya. Seperti pada output di bawah ini :
+![image](https://github.com/user-attachments/assets/e7d28b80-61cf-4c57-bc4a-3616784303e4)
+## Pemrosesan Argumen Output
+```sh
+case "$1" in
+    --play="Speak to Me") speak_to_me ;;
+    --play="On the Run") on_the_run ;;
+    --play="Time") time_display ;;
+    --play="Money") money_display ;;
+    --play="Brain Damage") brain_damage ;;
+    *) echo "Usage: ./dsotm.sh --play=\"<Track>\"" ;;
+esac
+```
+Skrip ini membaca argumen input untuk mengeksekusi fungsi yang sesuai dengan perintah --play="<Track>". Sehingga, fungsi-fungsi di atas dapat berjalan dengan baik sesuai input yang diminta.
 
 # Soal 4
 Pada suatu hari, anda diminta teman anda untuk membantunya mempersiapkan diri untuk turnamen Pokemon “Generation 9 OverUsed 6v6 Singles” dengan cara membuatkan tim yang cocok untuknya. Tetapi, anda tidak memahami meta yang dimainkan di turnamen tersebut. Untungnya, seorang informan memberikan anda data pokemon_usage.csv yang bisa anda download dan analisis. 
