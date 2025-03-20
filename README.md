@@ -277,4 +277,218 @@ done
 script ini akan melakukan infinite loop hingga user meng-cancel eksekusi dari script ini, dan script ini akan mengeluarkan output tentang CPU Usage selama 5 detik sekali, dengan format ``[YYYY-MM-DD HH:MM:SS] - Core Usage [$CPU%] - Terminal Model [$CPU_Model]``
 
 - Script ``frag_monitor.sh``
-  
+```sh
+FRAG_LOG="../logs/fragment.log"
+```
+mencari lokasi ``frag.log`` untuk menaruh output dari script ``frag_monitor.sh``
+
+```sh
+# ambil informasi RAM dari sistem secara langsung
+ram_total=$(free -m | awk '/Mem:/ {print $2}') 
+ram_used=$(free -m | awk '/Mem:/ {print $3}')
+ram_usage=$(perl -E "say sprintf('%.2f', ($ram_used/$ram_total)*100)")
+```
+mengambil informasi total ram yang tersedia (dalam MB), ram yang terpakai (dalam MB), serta persentase ram yang digunakan
+
+```sh
+timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+```
+untuk memenuhi keinginan output yaitu : ``[YYYY-MM-DD HH:MM:SS] - Fragment Usage [$RAM%] - Fragment Count [$RAM MB] - Details [Total: $TOTAL MB, Available: $AVAILABLE MB]``
+
+```sh
+# save hasil ke fragment.log
+echo "[$timestamp] -- Fragment Usage [${ram_usage}%] -- Fragment Count [$(perl -E "say sprintf('%.2f', $ram_used)") MB] -- Details [Total: ${ram_total} MB, Available: $(($ram_total - $ram_used)) MB]" >> "$FRAG_LOG"
+
+# show
+echo "[$timestamp] -- Fragment Usage [${ram_usage}%] -- Fragment Count [$(perl -E "say sprintf('%.2f', $ram_used)") MB] -- Details [Total: ${ram_total} MB, Available: $(($ram_total - $ram_used)) MB]"
+```
+menyimpan output dari script ``frag_monitor.sh`` dan menampilkannya di terminal
+
+# 5. membuat crontab manager pada ``manager.sh``
+```sh
+CPU_MONITOR="./scripts/core_monitor.sh"
+RAM_MONITOR="./scripts/frag_monitor.sh"
+```
+untuk mencari script ``core_monitor`` dan ``frag_monitor``
+
+```sh
+add_cron_job() {
+    (crontab -l 2>/dev/null; echo "$1") | crontab -
+    loading_animation
+    echo -e "${GREEN}✅ Job telah ditambahkan ke crontab!${RESET}"
+    sleep 1.5
+}
+```
+untuk menambahkan cronjob ke crontab
+
+```sh
+remove_cron_job() {
+    crontab -l | grep -v "$1" | crontab -
+    loading_animation
+    echo -e "${RED}❌ Job telah dihapus dari crontab!${RESET}"
+    sleep 1.5
+}
+```
+menghapus cronjob pada crontab
+
+```sh
+while true; do
+    echo -e "${CYAN}│ ${YELLOW}1)${RESET} Add CPU - Core Monitor to Crontab
+    echo -e "${CYAN}│ ${YELLOW}2)${RESET} Add RAM - Fragment Monitor to Crontab     
+    echo -e "${CYAN}│ ${YELLOW}3)${RESET} Remove CPU - Core Monitor from Crontab    
+    echo -e "${CYAN}│ ${YELLOW}4)${RESET} Remove RAM - Fragment Monitor from Crontab
+    echo -e "${CYAN}│ ${YELLOW}5)${RESET} View All Scheduled Monitoring Jobs        
+    echo -e "${CYAN}│ ${YELLOW}6)${RESET} Exit Arcaea Terminal                    
+    read -p "$(echo -e ${YELLOW}Enter option [1-6]: ${RESET})" choice
+
+    case $choice in
+        1)
+            add_cron_job "*/5 * * * * $CPU_MONITOR"
+            ;;
+        2)
+            add_cron_job "*/5 * * * * $RAM_MONITOR"
+            ;;
+        3)
+            remove_cron_job "$CPU_MONITOR"
+            ;;
+        4)
+            remove_cron_job "$RAM_MONITOR"
+            ;;
+        5)
+            echo -e "${YELLOW}📜 Crontab saat ini:${RESET}"
+            crontab -l
+            echo -e "${CYAN}Tekan enter untuk kembali...${RESET}"
+            read
+            ;;
+        6)
+            echo -e "${GREEN}👋 Keluar dari Arcaea Terminal.${RESET}"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}⚠️ Pilihan tidak valid, coba lagi!${RESET}"
+            sleep 1.5
+            ;;
+    esac
+done
+```
+menampilkan menu crontab manager yang bisa melakukan :
+1. menambahkan core monitor ke crontab
+2. menambahkan fragment monitor ke crontab
+3. menghapus core monitor dari crontab
+4. menghapus fragment monitor dari crontab
+5. melihat semua jadwal monitoring pada crontab
+6. keluar dari program
+
+# 6. membuat direktori ``logs`` yang setara dengan direktori ``scripts/``, dan membuat file ``core.log`` dan ``fragment.log``
+```sh
+mkdir logs && cd logs && touch core.log && touch fragment.log
+```
+file ``core.log`` dan ``fragment.log`` dalam direktori ``logs``berfungsi untuk menyimpan output dari core monitor dan ram monitor
+
+# Tahap Ketiga, Finishing
+# 7. membuat antarmuka utama sebagai titik masuk sistem dalam ``terminal.sh``
+```sh
+show_main_menu() {
+    while true; do
+        echo -e "${CYAN}-------------------------------------------------${NC}"
+        echo -e " ${YELLOW}MAIN MENU:${NC}"
+        echo -e "${CYAN}-------------------------------------------------${NC}"
+        echo -e " ${GREEN}1.${NC} Register"
+        echo -e " ${GREEN}2.${NC} Login"
+        echo -e " ${RED}3.${NC} Exit"
+        echo -e "${CYAN}-------------------------------------------------${NC}"
+        # input user
+        read -p " Choose an option [1-3]: " choice
+        echo ""
+
+```
+menampilkan main menu dan meminta input user
+
+```sh
+       case $choice in
+            1)
+                echo -e "${YELLOW}→ Opening Register...${NC}\n"
+                sleep 1
+                 
+                # input user buat regis
+                read -p "Input Email: " email
+                read -p "Input Username: " username
+                read -s -p "Input Password: " password
+                echo ""
+                
+                # manggil script register
+                bash register.sh "$email" "$username" "$password"
+
+                sleep 2
+                ;;
+            2)
+                echo -e "${YELLOW}→ Opening Login...${NC}\n"
+                sleep 1
+                
+                # input user buat login
+                read -p "Input Email: " email
+                read -s -p "Input Password: " password
+                echo ""
+
+                # manggil script login
+                bash login.sh "$email" "$password"
+                login_status=$?
+
+                if [ $login_status -eq 0 ]; then
+                    sleep 1
+                    show_user_dashboard
+                else
+                    echo -e "${RED}Login Failed! Incorrect email or password.${NC}\n"
+                    sleep 2
+                fi
+                ;;
+            3)
+                echo -e "${RED}Exiting... See you next time!${NC}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}Invalid choice! Please try again.${NC}\n"
+                sleep 1
+                ;;
+        esac
+    done
+}
+```
+pada pilihan 1, user akan registrasi dan diminta untuk mengisi <email> <username> dan <password>, lalu memanggil script ``register.sh`` untuk mengeksekusi input nya
+pada pilihan 2, user akan login dan diminta untuk mengisi <email> dan <password>, lalu memanggil script ``login.sh`` untuk mengeksekusi input nya
+pada pilihan 3, user akan keluar dari ``terminal.sh``
+
+
+```sh
+show_user_dashboard() {
+    while true; do
+        echo -e "${CYAN}-------------------------------------------------${NC}"
+        echo -e " ${YELLOW}USER DASHBOARD:${NC} (Logged in)"
+        echo -e "${CYAN}-------------------------------------------------${NC}"
+        echo -e " ${GREEN}1.${NC} Crontab Manager"
+        echo -e " ${RED}2.${NC} Logout"
+        echo -e "${CYAN}-------------------------------------------------${NC}"
+
+        read -p " Choose an option [1-2]: " dashboard_choice
+        echo ""
+
+        case $dashboard_choice in
+            1)
+                echo -e "${YELLOW}→ Opening Crontab Manager...${NC}\n"
+                sleep 1
+                bash scripts/manager.sh
+                ;;
+            2)
+                echo -e "${RED}Logging out...${NC}\n"
+                sleep 1
+                break
+                ;;
+            *)
+                echo -e "${RED}Invalid choice! Please try again.${NC}\n"
+                sleep 1
+                ;;
+        esac
+    done
+}
+```
+saat user telah berhasil login, user akan dialihkan ke menu ini, dimana user bisa mengakses ``crontab manager`` yang telah dibuat pada sebelumnya.
