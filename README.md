@@ -57,5 +57,25 @@ chmod +x script.sh
 
 ```./script.sh``` menjalankan script.
 
+# REVISI 
+
+# Deskripsi Perubahan
+Pada revisi ini, program telah diperbarui untuk mendukung klik opsi manual dalam pemilihan menu. Sebelumnya, pengguna harus memasukkan angka secara manual untuk memilih opsi. Kini, dengan tambahan fitur interaktif, pengguna bisa memilih opsi menggunakan tombol yang lebih mudah dipilih.
+
+# Perubahan yang Dilakukan
+
+1. Menambahkan Looping pada Menu
+
+Program akan terus berjalan hingga pengguna memilih opsi "Exit".
+
+Pengguna dapat memilih opsi berulang kali tanpa harus menjalankan kembali skrip.
+
+2. Meningkatkan Interaksi dengan Pilihan Manual
+
+Menggunakan ```select``` untuk menampilkan pilihan sebagai daftar yang lebih interaktif.
+
+Menghindari input manual yang rentan kesalahan dengan format yang lebih terstruktur.
+
+
 
 # Soal_2
